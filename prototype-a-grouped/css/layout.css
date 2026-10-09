@@ -1,0 +1,215 @@
+/* ---------------------------------------------------------------------------
+   Landscape-oriented dashboard layout (loaded after style.css / grouped.css).
+   Fluid CSS Grid tuned for 1440–1920px desktops, with two-column and stacked
+   fallbacks for smaller screens.
+
+   Prototype A areas:  side = explore rail, land = Salary Landscape,
+                       prog = Career Progression, cons = Constellation
+   Prototype B areas:  cons = Constellation + comparison, land, prog
+--------------------------------------------------------------------------- */
+
+/* ---- Compact header -------------------------------------------------------- */
+.top { max-width: none; padding: 14px 24px 10px; align-items: center; gap: 20px; }
+.eyebrow { font-size: 11px; }
+h1 { font-size: clamp(18px, 1.55vw, 25px); margin: 2px 0 4px; max-width: 1100px; }
+.lede { font-size: 13px; max-width: 1000px; }
+.top-controls { flex-direction: row; align-items: center; gap: 10px; }
+.status { max-width: 560px; }
+.reset { white-space: nowrap; }
+.load-error { max-width: none; }
+
+/* ---- Dashboard grid ---------------------------------------------------------- */
+.dash {
+  display: grid; gap: 14px; padding: 0 24px 14px;
+  max-width: 2200px; margin: 0 auto; align-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
+}
+.dash > * { min-width: 0; }
+body.loading .dash { opacity: .3; }
+
+/* Compact cards */
+.card { padding: 12px 16px 10px; border-radius: 12px; display: flex; flex-direction: column; }
+.card-head { gap: 10px; flex-wrap: nowrap; }
+.card-head > div:nth-child(2) { min-width: 0; }
+.badge { width: 34px; height: 34px; font-size: 14px; }
+h2 { font-size: 18px; }
+.sub { font-size: 12.5px; margin-top: 1px; }
+.tags { font-size: 12px; flex-shrink: 0; }
+.tags span { padding: 0 9px; }
+.card-foot { font-size: 11.5px; margin: 6px 0 0; line-height: 1.4; }
+.chart { margin-top: 6px; }
+.howto-inline { margin-top: 6px; font-size: 12.5px; }
+
+/* Chart + side panel: side by side on wide cards, panel below otherwise */
+.split { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-height: 0; }
+.split > .chart { flex: 1; min-width: 0; }
+.split > .side-panel { width: 236px; flex-shrink: 0; padding: 10px 12px; }
+@container (max-width: 699px) {
+  .split { flex-direction: column; align-items: stretch; }
+  .split > .side-panel { width: 100%; column-count: 2; column-gap: 20px; }
+  .split > .side-panel > * { break-inside: avoid; }
+}
+@container (max-width: 459px) {
+  .split > .side-panel { column-count: 1; }
+}
+
+/* Panels inside the cards: tighter */
+.side-panel .panel-title { font-size: 16px; }
+.side-panel .mini { max-width: 240px; }
+.panel-msg { font-size: 12.5px; }
+
+/* Collapsible legend in the constellation panel */
+.legend-details { margin-bottom: 8px; }
+.legend-details > summary { cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.legend-details[open] > summary { margin-bottom: 4px; }
+.cst-legend { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+.occ-box { border-top: 1px solid var(--border-strong); padding-top: 8px; }
+.occ-box .panel-title { font-size: 15px; }
+
+/* =========================== Prototype A ==================================== */
+.dash-a { grid-template-areas: "land" "side" "prog" "cons"; }
+.dash-a .rail { grid-area: side; gap: 10px; }
+.dash-a .card-land { grid-area: land; }
+.dash-a .card-prog { grid-area: prog; }
+.dash-a .card-cons { grid-area: cons; }
+
+/* Explore rail */
+.rail { background: linear-gradient(180deg, rgba(16,36,66,.6), rgba(10,23,41,.9)); }
+.rail .search, .rail .cat-list-wrap, .rail .info-panel { background: rgba(8,20,38,.6); }
+.rail .cat-list { max-height: 214px; }
+.rail .info-panel { padding: 12px 14px; }
+.rail .info-panel .panel-title { font-size: 18px; }
+.rail .hero b { font-size: 24px; }
+.rail .title-list { max-height: 120px; }
+
+/* Tablet: rail beside the landscape, supporting charts full width below */
+@media (min-width: 860px) {
+  .dash-a {
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-areas: "side land" "prog prog" "cons cons";
+  }
+  /* The rail never sets the row height; it scrolls inside it instead */
+  .dash-a .rail { contain: size; overflow: hidden; }
+  .dash-a .rail .info-panel { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+}
+
+/* Desktop 1200–1759: [rail | landscape] over [progression | constellation] */
+@media (min-width: 1200px) {
+  .dash-a {
+    grid-template-columns: 290px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "side land land" "prog prog cons";
+  }
+}
+
+/* Wide desktop ≥1760: rail | landscape + constellation | progression */
+@media (min-width: 1760px) {
+  .dash-a {
+    grid-template-columns: 300px minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-areas: "side land prog" "side cons prog";
+  }
+  .dash-a .card-prog { --lane-step: 42; }   /* tall column: roomy lanes */
+}
+
+/* =========================== Prototype B ==================================== */
+.dash-b { grid-template-areas: "cons" "land" "prog"; }
+.dash-b .card-cons { grid-area: cons; }
+.dash-b .card-land { grid-area: land; }
+.dash-b .card-prog { grid-area: prog; }
+.dash-b .compare-panel { width: 360px; padding: 12px 14px; }
+.dash-b .legend-row { padding-top: 8px; gap: 6px 22px; }
+
+@media (min-width: 900px) {
+  .dash-b {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "cons cons" "land prog";
+  }
+}
+
+/* Wide desktop ≥1760: constellation over progression | landscape alongside */
+@media (min-width: 1760px) {
+  .dash-b {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-areas: "cons land" "prog land";
+  }
+}
+
+/* ---- Footer ----------------------------------------------------------------- */
+.foot { max-width: 2200px; padding: 0 24px 24px; }
+.foot details { padding: 10px 14px; }
+.foot-sources { margin-top: 10px; font-size: 12.5px; }
+
+/* ---- Small screens ------------------------------------------------------------ */
+@media (max-width: 720px) {
+  .top { padding: 16px 16px 10px; }
+  .top-controls { flex-direction: column; align-items: stretch; }
+  .dash, .foot { padding-left: 16px; padding-right: 16px; }
+  .card-head { flex-wrap: wrap; }
+}
+
+/* ---- Compact chart details (both prototypes) -------------------------------- */
+/* Radial labels: two short lines */
+.pl-name { font-size: 12px; }
+.pl-line { font-size: 11px; }
+.pl-line .pl-value { font-size: 12.5px; }
+svg.medium .pl-name { font-size: 11px; }
+svg.medium .pl-line { font-size: 10.5px; }
+svg.medium .pl-line .pl-value { font-size: 11.5px; }
+
+/* Progression lanes: values, flags and n appear on hover or selection */
+.lane .ribbon { stroke-width: 10; }
+.lane .val, .lane .flag, .lane .nlabel { display: none; }
+.lane:hover .val, .lane:hover .flag, .lane.selected .val, .lane.selected .flag, .lane.selected .nlabel { display: inline; }
+.lane:hover .ribbon { stroke-opacity: .4; }
+.lane .pill text { font-size: 11.5px; }
+.prog-cols text { font-size: 12px; }
+svg.roomy .lane .val { display: inline; }
+
+/* Chart keeps its natural height when the panel sits below it */
+@container (max-width: 699px) {
+  .split > .chart { flex: none; }
+}
+
+/* Rail category list uses short labels */
+.rail .cat-list button, .rail .cat-list-head { grid-template-columns: 12px minmax(0, 1fr) 46px 44px 18px; gap: 6px; }
+.rail .cat-list-head { grid-template-columns: minmax(0, 1fr) 46px 44px 18px; padding-left: 26px; }
+.rail .cat-list button { font-size: 12.5px; }
+
+/* Constellation panel below the chart: legend beside a 2×2 stat block */
+@container (max-width: 699px) {
+  .card-cons .split > .side-panel { column-count: auto; display: flex; gap: 18px; align-items: flex-start; }
+  .card-cons .side-panel .legend-details { flex: 0 0 180px; margin: 0; }
+  .card-cons .side-panel .occ-box { flex: 1; min-width: 0; border-top: 0; padding-top: 0; border-left: 1px solid var(--border-strong); padding-left: 16px; }
+  .card-cons .occ-box { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .card-cons .occ-box > :not(.stat) { grid-column: 1 / -1; }
+  .card-cons .occ-box .stat { flex-direction: column; gap: 0; border-bottom: 0; padding: 3px 0; }
+  .card-cons .occ-box .stat span { font-size: 11px; }
+}
+@container (max-width: 459px) {
+  .card-cons .split > .side-panel { flex-direction: column; }
+  .card-cons .side-panel .legend-details { flex: none; }
+  .card-cons .side-panel .occ-box { border-left: 0; padding-left: 0; }
+}
+.star-label.unplaced { display: none; }
+.star-label.unplaced.selected, .star:hover + .star-label { display: inline; }
+
+/* Charts keep their natural height; cards never stretch a chart */
+.card > .chart { flex: none; }
+/* B: progression panel beside the lanes from 640px card width */
+@container (min-width: 640px) {
+  .dash-b .card-prog .split { flex-direction: row; align-items: flex-start; }
+  .dash-b .card-prog .split > .chart { flex: 1; }
+  .dash-b .card-prog .split > .side-panel { width: 250px; column-count: auto; }
+}
+/* Never wider than the screen */
+@container (max-width: 1000px) { .dash-b .compare-panel { width: 100%; } }
+.foot details { overflow-x: auto; }
+@media (max-width: 720px) { .mapping td:first-child { white-space: normal; } }
+svg.compact-lanes .lane .pill text { font-size: 10.5px; }
+
+/* Header stacks on narrower screens so the comparison tray never overflows */
+.top-controls { flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 1100px) {
+  .top { flex-direction: column; align-items: stretch; gap: 10px; }
+  .top-controls { justify-content: flex-start; }
+  .tray-wrap { justify-content: flex-start; }
+}

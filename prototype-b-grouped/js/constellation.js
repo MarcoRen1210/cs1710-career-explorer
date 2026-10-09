@@ -29,16 +29,16 @@ export function initConstellation(_data, container, legendContainer) {
 
 export function render() {
   const W = widthOf(el);
-  const compact = W < 560;
-  const m = { top: 28, right: compact ? 16 : 34, bottom: 54, left: compact ? 62 : 78 };
-  const H = compact ? 400 : Math.round(Math.min(560, Math.max(440, W * 0.56)));
+  const compact = W < 440;
+  const m = { top: 24, right: compact ? 16 : 28, bottom: 48, left: compact ? 60 : 72 };
+  const H = Math.round(Math.max(400, Math.min(600, W * 0.72)));
   const bls = [...data.bls].sort((a, b) => b.employment2025 - a.employment2025);
 
   const gx = d3.extent(bls, (d) => d.growth);
   x = d3.scaleLinear().domain([Math.min(-10, gx[0] - 3), gx[1] + 6]).nice().range([m.left, W - m.right]);
   const gy = d3.extent(bls, (d) => d.wage);
   y = d3.scaleLinear().domain([gy[0] - 10000, gy[1] + 12000]).nice().range([H - m.bottom, m.top]);
-  rScale = d3.scaleSqrt().domain([0, d3.max(bls, (d) => d.employment2025)]).range([0, compact ? 30 : 50]);
+  rScale = d3.scaleSqrt().domain([0, d3.max(bls, (d) => d.employment2025)]).range([0, compact ? 30 : 46]);
 
   d3.select(el).selectAll("svg").remove();
   svg = d3.select(el).insert("svg", ".popover").attr("viewBox", `0 0 ${W} ${H}`).attr("width", W).attr("height", H)
@@ -79,7 +79,7 @@ export function render() {
     .call(d3.axisBottom(x).ticks(8).tickFormat((d) => d + "%").tickSizeOuter(0));
   svg.append("g").attr("class", "axis").attr("transform", `translate(${m.left},0)`)
     .call(d3.axisLeft(y).ticks(6).tickFormat(fmtK).tickSizeOuter(0));
-  svg.append("text").attr("class", "axis-title").attr("x", (m.left + W - m.right) / 2).attr("y", H - 12)
+  svg.append("text").attr("class", "axis-title").attr("x", (m.left + W - m.right) / 2).attr("y", H - 8)
     .attr("text-anchor", "middle").text("Projected employment growth, 2025–2035 (%)");
   svg.append("text").attr("class", "axis-title").attr("transform", `translate(${compact ? 11 : 16},${(m.top + H - m.bottom) / 2}) rotate(-90)`)
     .attr("text-anchor", "middle").text("Median annual wage, 2025 (USD)");
@@ -110,35 +110,63 @@ export function render() {
   const labelLayer = svg.append("g").attr("class", "cst-labels");
   labelLayer.selectAll("text").data(bls, (d) => d.code).join("text")
     .attr("class", (d) => "star-label" + (d.catId ? " linked" : ""))
-    .each(function (d) {
-      const r = Math.max(3, rScale(d.employment2025));
-      const px = x(d.growth), py = y(d.wage);
-      const pos = {
-        right: [px + r + 7, py + 4, "start"],
-        left: [px - r - 7, py + 4, "end"],
-        top: [px, py - r - 8, "middle"],
-        bottom: [px, py + r + 15, "middle"],
-        "top-left": [px - r - 2, py - r - 4, "end"],
-        "bottom-right": [px + r * 0.6, py + r + 14, "start"],
-      }[LABEL_SIDE[d.code] || "right"];
-      d3.select(this).attr("x", pos[0]).attr("y", pos[1]).attr("text-anchor", pos[2]);
-    })
-    .text((d) => d.short)
-    .each(function (d) {
-      const t = d3.select(this);
-      const len = this.getComputedTextLength() * 1.1;
-      const lx = +t.attr("x");
-      const a = t.attr("text-anchor");
-      const left = a === "end" ? lx - len : a === "middle" ? lx - len / 2 : lx;
-      const r = Math.max(3, rScale(d.employment2025));
-      if (left + len > W - 2) t.attr("x", x(d.growth) - r - 7).attr("text-anchor", "end");
-      else if (left < 2) t.attr("x", x(d.growth) + r + 7).attr("text-anchor", "start");
-    });
+    .text((d) => d.short);
+  placeLabels(labelLayer, { x, y, rScale, W, H, m });
   labelLayer.classed("compact", compact);
 
   svg.on("click", () => cancelPending());
   renderLegend();
   update();
+}
+
+// Collision-aware label placement: each label tries positions around its
+// bubble (preferred side first) and takes the one that overlaps the fewest
+// other labels and bubbles while staying inside the chart. Labels that
+// cannot be placed cleanly are hidden; tooltips still name every bubble.
+function placeLabels(layer, { x, y, rScale, W, H, m }) {
+  const nodes = layer.selectAll("text").nodes();
+  const circles = nodes.map((n) => {
+    const d = n.__data__;
+    return { cx: x(d.growth), cy: y(d.wage), r: Math.max(3, rScale(d.employment2025)), code: d.code };
+  });
+  const pos = (side, px, py, r) => {
+    const k = r * 0.72;
+    return {
+      right: [px + r + 6, py + 4, "start"], left: [px - r - 6, py + 4, "end"],
+      top: [px, py - r - 6, "middle"], bottom: [px, py + r + 13, "middle"],
+      "top-left": [px - k - 3, py - k - 3, "end"], "top-right": [px + k + 3, py - k - 3, "start"],
+      "bottom-left": [px - k - 3, py + k + 11, "end"], "bottom-right": [px + k + 3, py + k + 11, "start"],
+    }[side];
+  };
+  const hits = (b, c) => {
+    const nx = Math.max(b.x, Math.min(c.cx, b.x + b.width)), ny = Math.max(b.y, Math.min(c.cy, b.y + b.height));
+    return (nx - c.cx) ** 2 + (ny - c.cy) ** 2 < (c.r + 1) ** 2;
+  };
+  const overlap = (a, b) => a.x < b.x + b.width + 2 && b.x < a.x + a.width + 2 && a.y < b.y + b.height + 1 && b.y < a.y + a.height + 1;
+  const placed = [];
+  // Linked occupations first, then larger bubbles
+  const order = nodes.slice().sort((a, b) => (!!b.__data__.catId - !!a.__data__.catId) || (b.__data__.employment2025 - a.__data__.employment2025));
+  order.forEach((node) => {
+    const d = node.__data__;
+    const t = d3.select(node).classed("unplaced", false);
+    const c = circles.find((q) => q.code === d.code);
+    const sides = [LABEL_SIDE[d.code] || "right", "right", "left", "top", "bottom", "top-right", "top-left", "bottom-right", "bottom-left"];
+    let best = null;
+    sides.forEach((side, i) => {
+      const [lx, ly, anchor] = pos(side, c.cx, c.cy, c.r);
+      t.attr("x", lx).attr("y", ly).attr("text-anchor", anchor);
+      const bb = node.getBBox();
+      const box = { x: bb.x, y: bb.y, width: bb.width * 1.08, height: bb.height };
+      if (anchor === "end") box.x -= bb.width * 0.08;
+      const out = box.x < 2 || box.x + box.width > W - 2 || box.y < 0 || box.y + box.height > H - m.bottom;
+      const score = (out ? 1000 : 0) + 1000 * placed.filter((p) => overlap(box, p)).length
+        + 30 * circles.filter((q) => q.code !== d.code && hits(box, q)).length + i;
+      if (!best || score < best.score) best = { score, lx, ly, anchor, box };
+    });
+    t.attr("x", best.lx).attr("y", best.ly).attr("text-anchor", best.anchor);
+    if (best.score >= 1000) t.classed("unplaced", true);
+    else placed.push(best.box);
+  });
 }
 
 const catName = (d) => (d.catId ? data.catById.get(d.catId).name : `${d.categoryName} (BLS only)`);
@@ -232,7 +260,7 @@ function renderPopover() {
 
 function renderLegend() {
   const p = d3.select(legendEl).html("");
-  p.append("div").attr("class", "panel-kicker").text("Bubble color = career category (same colors as the salary charts)");
+  p.append("div").attr("class", "panel-kicker").text("Bubble color = career category (same colors as the salary charts)").style("display", "none");
   const cats = p.append("ul").attr("class", "key key-row");
   data.categories.filter((c) => c.bls.length).forEach((c) => {
     cats.append("li").html(`<span class="k-dot" style="background:${c.color}"></span>${c.name}`);

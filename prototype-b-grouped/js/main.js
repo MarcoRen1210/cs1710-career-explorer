@@ -19,6 +19,8 @@ loadData()
     progression.initProgression(data, $("progression-chart"), $("progression-panel"));
     renderMappingTable(data);
     renderCategoryKey(data);
+    // Wide layout: the landscape column is tall, so show its key and guide
+    if (window.matchMedia("(min-width: 1760px)").matches) document.querySelectorAll(".card-land details").forEach((d) => { d.open = true; });
 
     onChange(() => {
       hideTip();

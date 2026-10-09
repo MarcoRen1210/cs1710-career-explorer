@@ -111,12 +111,13 @@ export function update() {
     ${stat("Middle 50% (IQR)", `${fmtK(cat.q1)} – ${fmtK(cat.q3)}`)}
     ${stat("10th – 90th percentile", `${fmtK(cat.p10)} – ${fmtK(cat.p90)}`)}
     ${sizeNote}${otherNote}
-    ${titleList(cat)}
     <div class="divider"></div>
     <div class="src-tag bls">BLS employment outlook</div>
     ${cat.bls.length
       ? cat.bls.map(blsBlock).join("") + `<p class="panel-foot">BLS figures describe a whole occupation in 2025; they are not directly comparable to the self-reported 2024 salaries above. Category membership is a broad relationship, not proof that every title shares this outlook.</p>`
-      : `<div class="alert">Outlook data unavailable.<br><span>No BLS occupation in this dataset corresponds to ${cat.name}. No projection is shown or borrowed from another occupation.</span></div>`}`;
+      : `<div class="alert">Outlook data unavailable.<br><span>No BLS occupation in this dataset corresponds to ${cat.name}. No projection is shown or borrowed from another occupation.</span></div>`}
+    <div class="divider"></div>
+    ${titleList(cat)}`;
   scrollTitle();
 }
 
@@ -129,7 +130,7 @@ function scrollTitle() {
 function renderList() {
   listEl.innerHTML = data.categories.map((c) => `
     <li><button type="button" data-id="${c.id}" class="${c.id === state.catId ? "on" : ""}${state.origin && c.id !== state.catId ? " dim" : ""}" aria-pressed="${c.id === state.catId}">
-      <span class="k-dot" style="background:${c.color}"></span><span class="cl-name">${c.name}</span>
+      <span class="k-dot" style="background:${c.color}"></span><span class="cl-name" title="${c.name}">${c.short}</span>
       <span class="cl-med">${fmtK(c.median)}</span><span class="cl-n">${fmtInt(c.n)}</span>${c.bls.length ? '<span class="cl-bls" title="Has BLS outlook data">◆</span>' : '<span class="cl-bls"></span>'}
     </button></li>`).join("");
   listEl.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => selectCategory(b.dataset.id)));

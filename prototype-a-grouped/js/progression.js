@@ -10,6 +10,7 @@ import { state, selectCategory, isDimmedCat } from "./state.js";
 import { fmtUSD, fmtK, fmtInt, tooltip, row, widthOf } from "./utils.js";
 import { LEVELS, MIN_N, SOURCES } from "./config.js";
 
+let pillMax = 140;
 let data, el, panelEl, svg;
 
 export function initProgression(_data, container, panel) {
@@ -23,10 +24,15 @@ export function render() {
   const W = widthOf(el);
   const compact = W < 520;
   const cats = data.categories;
-  const pillW = compact ? 104 : 150;
-  const m = { top: 44, right: compact ? 24 : 36, bottom: 30, left: pillW + 18 };
-  const rise = 20;
-  const laneStep = 52;
+  const pillW = compact ? 126 : 154;
+  pillMax = pillW - 8;
+  const m = { top: 34, right: compact ? 24 : 34, bottom: 24, left: pillW + 16 };
+  // Compact lanes: values appear on hover/selection (see CSS), tooltips always
+  const rise = 13;
+  // Lane spacing comes from the layout (CSS --lane-step) so tall columns can
+  // use roomier lanes with values always visible; otherwise compact lanes.
+  const cssStep = parseFloat(getComputedStyle(el).getPropertyValue("--lane-step"));
+  const laneStep = cssStep || (W < 560 ? 30 : 33);
   const H = m.top + cats.length * laneStep + m.bottom;
 
   const x = d3.scalePoint().domain(LEVELS.map((l) => l.code)).range([m.left + 22, W - m.right]);
@@ -37,14 +43,16 @@ export function render() {
 
   d3.select(el).selectAll("svg").remove();
   svg = d3.select(el).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("width", W).attr("height", H)
-    .attr("role", "img").attr("aria-label", "Median salary by experience level for each career category");
+    .attr("role", "img").attr("aria-label", "Median salary by experience level for each career category")
+    .classed("roomy", laneStep >= 40)
+    .classed("compact-lanes", compact);
 
   const cols = svg.append("g").attr("class", "prog-cols");
   cols.selectAll("line").data(LEVELS).join("line")
     .attr("x1", (d) => x(d.code)).attr("x2", (d) => x(d.code))
     .attr("y1", m.top - 10).attr("y2", H - m.bottom + 6);
   cols.selectAll("text").data(LEVELS).join("text")
-    .attr("x", (d) => x(d.code)).attr("y", m.top - 22).attr("text-anchor", "middle")
+    .attr("x", (d) => x(d.code)).attr("y", m.top - 16).attr("text-anchor", "middle")
     .text((d) => d.label);
 
   svg.append("text").attr("class", "prog-note").attr("x", compact ? 4 : m.left - 6).attr("y", H - 8)
@@ -62,12 +70,13 @@ export function render() {
     const sel = d3.select(this);
     const lv = cat.levels.map((l) => ({ ...l, y: l.median != null ? yOff(l.median) : -rise / 2 }));
 
-    const pill = sel.append("g").attr("class", "pill").attr("transform", `translate(4,${-rise / 2 - 11})`)
+    const pill = sel.append("g").attr("class", "pill").attr("transform", `translate(4,${-rise / 2 - 10})`)
       .attr("tabindex", 0).attr("role", "button").attr("aria-label", `Select ${cat.name}`)
       .on("click", () => pick(cat))
       .on("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(cat); } });
-    pill.append("rect").attr("width", pillW).attr("height", 22).attr("rx", 6).attr("stroke", cat.color);
-    pill.append("text").attr("x", pillW / 2).attr("y", 15).attr("text-anchor", "middle").text(cat.short);
+    pill.append("rect").attr("width", pillW).attr("height", 20).attr("rx", 6).attr("stroke", cat.color);
+    pill.append("text").attr("x", pillW / 2).attr("y", 14).attr("text-anchor", "middle").text(cat.short)
+      .each(function () { fitText(this, pillW - 8); });
     const firstDef = lv.find((d) => d.median != null);
     sel.append("line").attr("class", "pill-lead").attr("stroke", cat.color)
       .attr("x1", pillW + 4).attr("x2", x(firstDef.code) - 8).attr("y1", -rise / 2).attr("y2", firstDef.y);
@@ -85,18 +94,18 @@ export function render() {
       .attr("transform", (d) => `translate(${x(d.code)},${d.y})`)
       .on("click", () => pick(cat));
     const has = nodes.filter((d) => d.status !== "none");
-    has.append("circle").attr("class", "dotc").attr("r", 5)
+    has.append("circle").attr("class", "dotc").attr("r", 4.5)
       .attr("fill", (d) => (d.status === "low" ? "var(--bg-card)" : cat.color))
       .attr("stroke", (d) => (d.status === "low" ? cat.color : "#fff"));
-    has.append("text").attr("class", "val").attr("y", -9).attr("text-anchor", "middle").text((d) => fmtK(d.median));
-    nodes.filter((d) => d.status === "low").append("text").attr("class", "flag").attr("y", 16).attr("text-anchor", "middle")
+    has.append("text").attr("class", "val").attr("y", -8).attr("text-anchor", "middle").text((d) => fmtK(d.median));
+    nodes.filter((d) => d.status === "low").append("text").attr("class", "flag").attr("y", 15).attr("text-anchor", "middle")
       .text((d) => `⚠ n=${d.n}`);
-    has.filter((d) => d.status === "ok").append("text").attr("class", "nlabel").attr("y", 16).attr("text-anchor", "middle")
+    has.filter((d) => d.status === "ok").append("text").attr("class", "nlabel").attr("y", 15).attr("text-anchor", "middle")
       .text((d) => `n=${fmtInt(d.n)}`);
     const none = nodes.filter((d) => d.status === "none");
-    none.append("circle").attr("class", "missing").attr("r", 5);
-    none.append("text").attr("class", "flag").attr("y", -9).attr("text-anchor", "middle").text("N/A");
-    nodes.append("circle").attr("class", "hit").attr("r", 13);
+    none.append("circle").attr("class", "missing").attr("r", 4.5);
+    none.append("text").attr("class", "flag").attr("y", -8).attr("text-anchor", "middle").text("N/A");
+    nodes.append("circle").attr("class", "hit").attr("r", 12);
     tooltip(nodes, (d) => nodeTip(cat, d));
   });
 
@@ -180,6 +189,16 @@ function renderPanel() {
       .html(`<span class="k-dot" style="background:${cat.color}"></span>${l.label}: <b>${fmtInt(l.n)}</b>` +
         (l.status === "low" ? ` <span class="warn">⚠ limited</span>` : l.status === "none" ? ` <span class="warn">no data</span>` : ""));
   });
+}
+
+// Shrink a label's font (never below 8.5px) until it fits the given width
+function fitText(node, maxW) {
+  node.style.fontSize = null;
+  const len = node.getComputedTextLength();
+  if (len > maxW) {
+    const fs = parseFloat(getComputedStyle(node).fontSize);
+    node.style.fontSize = Math.max(8.5, (fs * maxW) / len).toFixed(2) + "px";
+  }
 }
 
 function roundedTop(x, y, w, h, r) {

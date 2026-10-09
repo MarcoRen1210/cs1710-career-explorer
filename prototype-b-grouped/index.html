@@ -12,14 +12,15 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/prototype-b.css" />
   <link rel="stylesheet" href="css/grouped.css" />
+  <link rel="stylesheet" href="css/layout.css" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 </head>
 <body class="loading proto-b">
   <header class="top">
     <div class="top-text">
-      <div class="eyebrow">Prototype B · Future-First Career Explorer · Career categories</div>
+      <div class="eyebrow">Prototype B · Future-First Career Explorer</div>
       <h1>Which data science careers pay well, grow with experience, and have a strong outlook?</h1>
-      <p class="lede">Start from the official U.S. employment outlook, pick two occupations to compare side by side, then see how salaries in their career categories are distributed and how pay differs by experience level. All 2024 U.S. salary records are included, grouped into career categories.</p>
+      <p class="lede">Start from the official BLS outlook: pick two occupations to compare side by side, then see how salaries in their career categories are distributed and change with experience (all 23,580 U.S. 2024 records, 17 categories).</p>
     </div>
     <div class="top-controls">
       <div class="tray-wrap">
@@ -32,40 +33,40 @@
 
   <div id="load-error" class="load-error" hidden></div>
 
-  <main class="grid">
+  <main class="dash dash-b">
     <!-- 01 · Career Opportunity Constellation (main view) -->
-    <section class="card card-main" aria-labelledby="t-constellation">
+    <section class="card card-cons" aria-labelledby="t-constellation">
       <div class="card-head">
         <span class="badge b3">01</span>
         <div>
           <h2 id="t-constellation">Career Opportunity Constellation</h2>
-          <p class="sub">Which data-related occupations combine high pay and strong projected demand? Click up to two to compare.</p>
+          <p class="sub">Which occupations combine high pay and strong projected demand? <b>Click up to two bubbles to compare.</b></p>
         </div>
         <div class="tags"><span>BLS</span><span>Wages 2025</span><span>Projections 2025–2035</span></div>
       </div>
       <div class="card-body main-body">
         <div class="main-col">
           <div id="constellation-chart" class="chart"></div>
-          <div id="constellation-legend" class="legend-row"></div>
+          <details class="legend-details legend-b"><summary>Legend · bubble color = career category · area = employment (2025)</summary><div id="constellation-legend" class="legend-row"></div></details>
         </div>
         <aside id="compare-panel" class="compare-panel" aria-live="polite"></aside>
       </div>
-      <p class="card-foot">Each bubble is one official BLS occupation with its own statistics, colored by the related career category. Category membership is a broad relationship, not proof that every job title shares the occupation's outlook. Projections are not estimates of AI's effect on employment.</p>
+      <p class="card-foot">Each bubble is one BLS occupation with its own official statistics, colored by its related career category, which is a broad relationship rather than a shared outlook for every title. Projections are not estimates of AI's effect on employment.</p>
     </section>
 
     <!-- 02 · Salary Landscape -->
-    <section class="card" aria-labelledby="t-landscape">
+    <section class="card card-land" aria-labelledby="t-landscape">
       <div class="card-head">
         <span class="badge b1">02</span>
         <div>
           <h2 id="t-landscape">Salary Landscape</h2>
-          <p class="sub">How are salaries distributed in the career categories of the selected occupations?</p>
+          <p class="sub">Salary distributions of the selected occupations’ career categories</p>
         </div>
         <div class="tags"><span>United States</span><span>2024</span><span>All levels</span></div>
       </div>
       <div id="landscape-chart" class="chart"></div>
       <div id="landscape-strip" class="strip" aria-live="polite"></div>
-      <details class="howto-inline" open>
+      <details class="howto-inline">
         <summary>How to read the petals</summary>
         <ul>
           <li><b>Distance from center</b> = salary (rings every $100K, $0 at the center circle)</li>
@@ -83,12 +84,12 @@
     </section>
 
     <!-- 03 · Career Progression -->
-    <section class="card" aria-labelledby="t-progression">
+    <section class="card card-prog" aria-labelledby="t-progression">
       <div class="card-head">
         <span class="badge b2">03</span>
         <div>
           <h2 id="t-progression">Career Progression</h2>
-          <p class="sub">How does median salary differ across experience levels?</p>
+          <p class="sub">Median salary by experience level · hover a lane for values</p>
         </div>
         <div class="tags"><span>United States</span><span>2024</span></div>
       </div>
@@ -96,7 +97,7 @@
         <div id="progression-chart" class="chart"></div>
         <aside id="progression-panel" class="side-panel" aria-live="polite"></aside>
       </div>
-      <p class="card-foot">Each level is a different group of people, so this is a cross-sectional comparison, not salary growth for individual employees. Levels are self-reported categories (EN, MI, SE, EX) with no fixed years of experience.</p>
+      <p class="card-foot">Each level is a different group of people (cross-sectional, not individual salary growth). Levels are self-reported (EN, MI, SE, EX) with no fixed years of experience.</p>
     </section>
   </main>
 

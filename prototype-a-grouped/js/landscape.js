@@ -33,9 +33,10 @@ export function initLandscape(_data, container) {
 export function render() {
   const W = widthOf(el);
   const compact = W < 540;
-  const H = compact ? Math.round(W * 0.98) : Math.round(Math.min(720, Math.max(600, W * 0.66)));
-  const medium = !compact && W < 800; // half-width cards: smaller label text
-  const labelRoom = compact ? 10 : medium ? 172 : 190;
+  const H = compact ? Math.round(W * 0.98) : Math.round(Math.min(720, Math.max(560, W * 0.76)));
+  const medium = !compact && W < 800; // narrower cards: smaller label text
+  // Labels wrap onto two short lines, so each side needs ~125px, not ~190px
+  const labelRoom = compact ? 10 : 126;
   const R = Math.min(W / 2 - labelRoom, H / 2 - (compact ? 14 : 30));
   const r0 = R * 0.2;
   const cx = W / 2;
@@ -161,7 +162,7 @@ export function render() {
     tooltip(sel.append("circle").attr("class", "median").attr("cx", mx).attr("cy", my).attr("r", 4.5), () => petalTip(cat));
   });
 
-  if (!compact) drawLabels(cats, { cx, cy, R, H, petals, offset: medium ? 34 : 44 });
+  if (!compact) drawLabels(cats, { cx, cy, R, H, petals, offset: 22 });
 
   // ---- Center circle ----------------------------------------------------
   const center = g.append("g").attr("class", "lnd-center").attr("transform", `translate(${cx},${cy})`);
@@ -173,13 +174,27 @@ export function render() {
   update();
 }
 
+// Split a label into at most two lines of ~14 characters
+function wrap(text, max = 14) {
+  const words = text.split(" ");
+  const lines = [""];
+  words.forEach((w) => {
+    const cur = lines[lines.length - 1];
+    if (cur && (cur + " " + w).length > max && lines.length < 2) lines.push(w);
+    else lines[lines.length - 1] = cur ? cur + " " + w : w;
+  });
+  return lines;
+}
+
 // Two label columns with leader lines; positions relaxed to avoid overlap.
+const LINE = 13;
 function drawLabels(cats, { cx, cy, R, H, petals, offset }) {
-  const gap = 37;
   const colR = cx + R + offset, colL = cx - R - offset;
   const items = cats.map((c) => {
     const s = Math.sin(c._angle);
-    return { c, side: s > 1e-6 ? "R" : s < -1e-6 ? "L" : null, y0: cy - (R + 14) * Math.cos(c._angle) };
+    const lines = wrap(c.short);
+    const h = (lines.length + 1) * LINE + 5; // name line(s) + value line + spacing
+    return { c, lines, h, side: s > 1e-6 ? "R" : s < -1e-6 ? "L" : null, y0: cy - (R + 14) * Math.cos(c._angle) - h / 2 + LINE };
   });
   // A petal pointing straight up/down goes to the less crowded column
   items.filter((d) => !d.side).forEach((d) => {
@@ -187,11 +202,12 @@ function drawLabels(cats, { cx, cy, R, H, petals, offset }) {
   });
   ["R", "L"].forEach((side) => {
     const col = items.filter((d) => d.side === side).sort((a, b) => a.y0 - b.y0);
-    const top = 16, bottom = H - 22;
-    // Push down to keep a minimum gap, then pull back up from the bottom edge
-    col.forEach((d, i) => { d.y = Math.max(d.y0, i ? col[i - 1].y + gap : top); });
+    const top = 14;
+    // d.y = baseline of the first line. Push down to keep blocks apart,
+    // then pull back up from the bottom edge.
+    col.forEach((d, i) => { d.y = Math.max(d.y0, i ? col[i - 1].y + col[i - 1].h : top); });
     for (let i = col.length - 1; i >= 0; i--) {
-      const lim = i === col.length - 1 ? bottom : col[i + 1].y - gap;
+      const lim = i === col.length - 1 ? H - col[i].h + LINE - 4 : col[i + 1].y - col[i].h;
       if (col[i].y > lim) col[i].y = lim;
     }
   });
@@ -205,13 +221,14 @@ function drawLabels(cats, { cx, cy, R, H, petals, offset }) {
     const tip = [cx + (R + 3) * o.ux, cy + (R + 3) * o.uy];
     const elbow = [cx + (R + 16) * o.ux, cy + (R + 16) * o.uy];
     sel.append("path").attr("class", "leader")
-      .attr("d", `M${tip}L${elbow}L${lx + (right ? -6 : 6)},${it.y - 4}`)
+      .attr("d", `M${tip}L${elbow}L${lx + (right ? -5 : 5)},${it.y - 4}`)
       .attr("stroke", cat.color);
+    cat._lines = it.lines;
     const t = sel.append("text").attr("class", "petal-label").attr("text-anchor", right ? "start" : "end")
       .attr("transform", `translate(${lx},${it.y})`);
-    t.append("tspan").attr("class", "pl-name").attr("x", 0).attr("dy", -2).attr("fill", cat.color).text(cat.short);
-    t.append("tspan").attr("class", "pl-line").attr("x", 0).attr("dy", 15)
-      .html(`<tspan class="pl-value">${fmtK(cat.median)}</tspan> · n = ${fmtInt(cat.n)}${cat.n < MIN_N ? " ⚠" : ""}`);
+    it.lines.forEach((ln, k) => t.append("tspan").attr("class", "pl-name").attr("x", 0).attr("dy", k ? LINE : 0).attr("fill", cat.color).text(ln));
+    t.append("tspan").attr("class", "pl-line").attr("x", 0).attr("dy", LINE + 1)
+      .html(`<tspan class="pl-value">${fmtK(cat.median)}</tspan> · n=${fmtInt(cat.n)}${cat.n < MIN_N ? " ⚠" : ""}`);
   });
 }
 
