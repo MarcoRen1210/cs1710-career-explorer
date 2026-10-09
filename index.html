@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Career Explorer</title>
+  <meta name="description" content="CS 1710 project: two interactive dashboards exploring U.S. data science salaries, experience-level pay, and BLS employment outlook." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%237ea6ff%22/%3E%3C/svg%3E" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #050d1a; --card: #0a1729; --border: #1c3557; --text: #e8eef9; --text-2: #b3c2d9; --b1: #7ea6ff; --b3: #ff9b6a; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font: 15px/1.5 "Inter", system-ui, sans-serif; color: var(--text);
+      background: radial-gradient(1000px 500px at 15% -10%, #0f2a52 0%, transparent 60%), radial-gradient(800px 500px at 100% 10%, #1a1645 0%, transparent 55%), var(--bg); }
+    main { max-width: 960px; margin: 0 auto; padding: 48px 16px; }
+    .eyebrow { color: var(--b1); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
+    h1 { font: 700 clamp(24px, 4vw, 34px)/1.2 "Sora", sans-serif; margin: 8px 0 12px; }
+    p { color: var(--text-2); margin: 0 0 12px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 28px; }
+    a.card { display: block; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: transform .15s, border-color .15s; }
+    a.card:hover, a.card:focus-visible { transform: translateY(-2px); border-color: var(--c); outline: none; }
+    .badge { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--c); color: #071225; font: 700 16px "Sora", sans-serif; }
+    h2 { font: 600 20px "Sora", sans-serif; margin: 12px 0 6px; }
+    .go { color: var(--c); font-weight: 600; margin-top: 10px; display: inline-block; }
+    footer { margin-top: 32px; font-size: 13px; color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">CS 1710 · Marco Ren, Helen Jin, Daniel Wei</div>
+    <h1>Which data science careers pay well, grow with experience, and have a strong outlook?</h1>
+    <p>Two interactive prototypes answer the same question with the same three coordinated visualizations, using different layouts and interactions.</p>
+    <div class="cards">
+      <a class="card" href="prototype-a-grouped/" style="--c: var(--b1)">
+        <span class="badge">A</span>
+        <h2>Salary-First Career Explorer</h2>
+        <p>Start from what each of 17 career categories earns, follow pay across experience levels, then check the BLS outlook.</p>
+        <span class="go">Open Prototype A →</span>
+      </a>
+      <a class="card" href="prototype-b-grouped/" style="--c: var(--b3)">
+        <span class="badge">B</span>
+        <h2>Future-First Career Explorer</h2>
+        <p>Start from BLS employment projections, compare two occupations side by side, then see their career categories' salaries.</p>
+        <span class="go">Open Prototype B →</span>
+      </a>
+    </div>
+    <footer>Data: self-reported U.S. salaries (2024); U.S. Bureau of Labor Statistics wages (2025) and employment projections (2025–2035).</footer>
+  </main>
+</body>
+</html>

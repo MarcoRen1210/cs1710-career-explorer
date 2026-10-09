@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Salary-First Career Explorer</title>
+  <meta name="description" content="Prototype A (grouped): coordinated D3 dashboard exploring U.S. data career categories by salary, experience level, and BLS employment outlook." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%237ea6ff%22/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/grouped.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+</head>
+<body class="loading">
+  <header class="top">
+    <div class="top-text">
+      <div class="eyebrow">Prototype A · Salary-First Career Explorer · Career categories</div>
+      <h1>Which data science careers pay well, grow with experience, and have a strong outlook?</h1>
+      <p class="lede">Every U.S. salary record from 2024 is grouped into a career category. Start from what each category earns, follow pay across experience levels, then check the BLS employment outlook where a related occupation exists.</p>
+    </div>
+    <div class="top-controls">
+      <div id="status" class="status" aria-live="polite">Loading data…</div>
+      <button id="reset" class="reset" type="button" disabled>↺ Reset view</button>
+    </div>
+  </header>
+
+  <div id="load-error" class="load-error" hidden></div>
+
+  <main class="grid">
+    <!-- 01 · Salary Landscape (main view) -->
+    <section class="card card-main" aria-labelledby="t-landscape">
+      <div class="card-head">
+        <span class="badge b1">01</span>
+        <div>
+          <h2 id="t-landscape">Salary Landscape</h2>
+          <p class="sub">How do salary distributions compare across data career categories? Ordered clockwise by median salary; “Other” last.</p>
+        </div>
+        <div class="tags"><span>United States</span><span>2024</span><span>All levels</span></div>
+      </div>
+      <div class="card-body main-body">
+        <div id="landscape-chart" class="chart"></div>
+        <aside class="side">
+          <form id="search" class="search" role="search" autocomplete="off">
+            <label class="panel-kicker" for="search-input">Find a category or job title</label>
+            <input id="search-input" list="search-options" type="search" placeholder="e.g. Prompt Engineer, Data Science…" />
+            <datalist id="search-options"></datalist>
+            <div class="search-msg" aria-live="polite"></div>
+          </form>
+          <div class="cat-list-wrap">
+            <div class="cat-list-head"><span>Category</span><span>Median</span><span>n</span><span title="Has BLS outlook data">BLS</span></div>
+            <ul id="category-list" class="cat-list" aria-label="Career categories"></ul>
+          </div>
+          <div id="info-panel" class="info-panel" aria-live="polite"></div>
+          <details class="howto">
+            <summary class="panel-kicker">How to read the petals</summary>
+            <ul>
+              <li><b>Distance from center</b> = salary (rings every $100K, $0 at the center circle)</li>
+              <li><b>Petal width</b> = density of salaries at that level (scaled to each category's peak)</li>
+              <li><b>Dots</b> = individual salary records</li>
+              <li><b>White segment</b> = middle 50% (IQR); <b>white dot</b> = median</li>
+              <li>Salaries above $400K sit just outside the outer ring</li>
+            </ul>
+          </details>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 02 · Career Progression -->
+    <section class="card" aria-labelledby="t-progression">
+      <div class="card-head">
+        <span class="badge b2">02</span>
+        <div>
+          <h2 id="t-progression">Career Progression</h2>
+          <p class="sub">How does median salary differ across experience levels?</p>
+        </div>
+        <div class="tags"><span>United States</span><span>2024</span></div>
+      </div>
+      <div class="card-body split">
+        <div id="progression-chart" class="chart"></div>
+        <aside id="progression-panel" class="side-panel" aria-live="polite"></aside>
+      </div>
+      <p class="card-foot">Each level is a different group of people, so this is a cross-sectional comparison, not salary growth for individual employees. Levels are self-reported categories (EN, MI, SE, EX) with no fixed years of experience.</p>
+    </section>
+
+    <!-- 03 · Career Opportunity Constellation -->
+    <section class="card" aria-labelledby="t-constellation">
+      <div class="card-head">
+        <span class="badge b3">03</span>
+        <div>
+          <h2 id="t-constellation">Career Opportunity Constellation</h2>
+          <p class="sub">Which data-related occupations combine high pay and strong projected demand?</p>
+        </div>
+        <div class="tags"><span>BLS</span><span>2025–2035</span></div>
+      </div>
+      <div class="card-body split">
+        <div id="constellation-chart" class="chart"></div>
+        <aside id="constellation-panel" class="side-panel" aria-live="polite"></aside>
+      </div>
+      <p class="card-foot">Each bubble is one official BLS occupation with its own statistics, colored by the related career category. Category membership is a broad relationship, not proof that every job title shares the occupation's outlook. Projections are not estimates of AI's effect on employment.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <details>
+      <summary>Career category ↔ BLS occupation mapping (from the CSV files)</summary>
+      <table id="mapping-table" class="mapping"></table>
+      <p>The full job title → category list is in <code>data/job_title_to_career_category_mapping.csv</code>; search above to look up any title.</p>
+    </details>
+    <div class="foot-sources">
+      <p><b>Salary data:</b> salaries_grouped.csv, filtered to <code>employee_residence = US</code> and <code>work_year = 2024</code>, using <code>salary_in_usd</code> and <code>career_category</code>. Self-reported; all job titles and employment types included.</p>
+      <p><b>BLS data:</b> bls_career_outlook_grouped.csv. OEWS median annual wages (2025) and Employment Projections (2025–2035). Aggregate official statistics for whole occupations; not directly comparable with individual self-reported salaries.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
